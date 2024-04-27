@@ -1,74 +1,70 @@
 import requests
+import re
+import helper
 from bs4 import BeautifulSoup
+from models.case import Case
 
-category_730_Weapon = [
-  "tag_weapon_ak47",
-  "tag_weapon_aug",
-  "tag_weapon_awp",
-  "tag_weapon_bayonet",
-  "tag_weapon_knife_survival_bowie",
-  "tag_weapon_knife_butterfly",
-  "tag_weapon_knife_css",
-  "tag_weapon_cz75a",
-  "tag_weapon_deagle",
-  "tag_weapon_elite",
-  "tag_weapon_knife_falchion",
-  "tag_weapon_famas",
-  "tag_weapon_fiveseven",
-  "tag_weapon_knife_flip",
-  "tag_weapon_g3sg1",
-  "tag_weapon_galilar",
-  "tag_weapon_glock",
-  "tag_weapon_knife_gut",
-  "tag_weapon_knife_tactical",
-  "tag_weapon_knife_karambit",
-  "tag_weapon_knife_kukri",
-  "tag_weapon_m249",
-  "tag_weapon_m4a1_silencer",
-  "tag_weapon_m4a1",
-  "tag_weapon_knife_m9_bayonet",
-  "tag_weapon_mac10",
-  "tag_weapon_mag7",
-  "tag_weapon_mp5sd",
-  "tag_weapon_mp7",
-  "tag_weapon_mp9",
-  "tag_weapon_knife_gypsy_jackknife",
-  "tag_weapon_negev",
-  "tag_weapon_knife_outdoor",
-  "tag_weapon_nova",
-  "tag_weapon_hkp2000",
-  "tag_weapon_p250",
-  "tag_weapon_p90",
-  "tag_weapon_knife_cord",
-  "tag_weapon_bizon",
-  "tag_weapon_revolver",
-  "tag_weapon_sawedoff",
-  "tag_weapon_scar20",
-  "tag_weapon_sg556",
-  "tag_weapon_knife_push",
-  "tag_weapon_knife_skeleton",
-  "tag_weapon_ssg08",
-  "tag_weapon_knife_stiletto",
-  "tag_weapon_knife_canis",
-  "tag_weapon_knife_widowmaker",
-  "tag_weapon_tec9",
-  "tag_weapon_ump45",
-  "tag_weapon_knife_ursus",
-  "tag_weapon_usp_silencer",
-  "tag_weapon_xm1014",
-  "tag_weapon_taser"
-]
-category_730_Exterior = [
-  "tag_WearCategory0",
-  "tag_WearCategory1",
-  "tag_WearCategory2",
-  "tag_WearCategory3",
-  "tag_WearCategory4",
-]
+"""
+Gloves:
+extraodiary: mau do
 
-response = requests.get("https://steamcommunity.com/market/search?q=&category_730_ItemSet%5B%5D=any&category_730_ProPlayer%5B%5D=any&category_730_StickerCapsule%5B%5D=any&category_730_Tournament%5B%5D=any&category_730_TournamentTeam%5B%5D=any&category_730_Type%5B%5D=any&category_730_Weapon%5B%5D=tag_weapon_ak47&category_730_Exterior%5B%5D=tag_WearCategory0&appid=730#p1_price_asc")
-soup = BeautifulSoup(response.content, "html.parser")
+Agent:
+master: do
+superior: hong
+exceptional: tim
+distinguished: xanh dam
 
-filters = soup.find(id="searchResultsTable")
+Knife:
+covert: do
 
-print(filters)
+Weapon:
+consumer: xam
+industrial: xanh nhat
+mil-spec: xanh dam
+restricted: tim
+classified: hong
+covert: do
+contraband: vang
+
+Sticker:
+contraband: vang
+extraodiary: mau do
+exotic: hong
+remarkable: tim
+high-grade: xanh
+"""
+
+parser = "html.parser"
+
+
+def save_assets():
+    response = requests.get("https://csgostash.com/gloves?page=2")
+    soup = BeautifulSoup(response.content, parser)
+    links = soup.select(".result-box > a")
+    assets = []
+    for link in links:
+        url = link.attrs["href"]
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, parser)
+        asset = helper.to_asset(soup, "gloves")
+        assets.append(asset)
+        print("Write {} - {} successful".format(asset.name, asset.family_name))
+        print("-------------------------------------------")
+    helper.save_to_file(assets, "gloves-2")
+
+
+def save_cases():
+    response = requests.get("https://totalcsgo.com/skins/cases")
+    soup = BeautifulSoup(response.content, parser)
+    items = soup.select(".results-container .masonry-item")
+    cases = []
+    for item in items:
+        title = item.select_one(".title").text
+        price = item.select_one(".price-outer-container").text
+        final_price = float(price.replace("$", ""))
+        case = Case(title, "", final_price)
+        cases.append(case)
+    helper.save_to_file(cases, "cases")
+
+
+save_cases()
